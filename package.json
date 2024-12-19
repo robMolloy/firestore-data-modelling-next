@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "firebase:init": "node_modules/.bin/firebase init"
+    "firebase:init": "node_modules/.bin/firebase init",
+    "firebase:emulators-start:offline": "node_modules/.bin/firebase --project demo-startup-incubator-platform-test emulators:start --only auth,firestore"
   },
   "dependencies": {
     "next": "15.1.2",
