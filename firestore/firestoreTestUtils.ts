@@ -1,7 +1,4 @@
-import {
-  assertFails,
-  initializeTestEnvironment,
-} from "@firebase/rules-unit-testing";
+import { assertFails, initializeTestEnvironment } from "@firebase/rules-unit-testing";
 import { setLogLevel } from "firebase/firestore";
 import { readFileSync } from "fs";
 import path from "path";
@@ -20,13 +17,22 @@ export const createTestEnvironment = async () => {
 };
 
 export async function expectFirestorePermissionDenied(
-  promise: Promise<unknown>
+  promise: Promise<unknown>,
+  options?: { onError?: () => void },
 ) {
   return new Promise<void>(async (resolve) => {
-    const errorResult = await assertFails(promise);
-    expect(
-      ["permission-denied", "PERMISSION_DENIED"].includes(errorResult.code)
-    ).toBe(true);
+    const hasFailed = await (async () => {
+      try {
+        const errorResult = await assertFails(promise);
+        return ["permission-denied", "PERMISSION_DENIED"].includes(errorResult.code);
+      } catch (error) {
+        return false;
+      }
+    })();
+    if (!hasFailed) {
+      if (options?.onError) options.onError();
+      else throw new Error("Expected request to fail, but it succeeded.");
+    } else expect(hasFailed).toBe(true);
     resolve(undefined);
   });
 }

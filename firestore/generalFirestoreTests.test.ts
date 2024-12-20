@@ -34,6 +34,7 @@ describe("firestore rules for a randomCollection", () => {
   it("should not allow create access to a random collection", async () => {
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
     const docRef = doc(unauthedDb, "someRandomCollection", "id1");
+    await expectFirestorePermissionDenied(setDoc(docRef, { some: "data2" }), { onError: () => { throw new Error("setDoc to someRandomCollection allowed") } });
     await expectFirestorePermissionDenied(setDoc(docRef, { some: "data2" }));
   });
 

@@ -4,12 +4,11 @@ Add any relevant commands to package.json
 
 ## Setup
 
-- Go to https://console.firebase.google.com
-
-  - create a project
-  - create a firestore and auth instance in your new project
-
-- Fresh install NextJS project
+<ol>
+  <li>a</li>
+  <li>b</li>
+  <li>c</li>
+</ol>
 
 - Setup emulator;
 
@@ -24,6 +23,7 @@ Add any relevant commands to package.json
     - select auth, firestore and emulators only in the CLI wizard
     - select the existing project that's already been created in the console
   - create a firestore folder in the root directory and move the `firestore.indexes.json` & `firestore.rules` and edit the `firebase.json` file accordingly
+    - you can stick to the default setup but have a look at the `firebase.json` in this project if you're unsure
   - run the `firebase:emulators-start:offline` script in the terminal with `npm run firebase:emulators-start:offline` and edit the tests so that they pass/fail to make sure the test environment is working properly.
 
 - Setup Jest
