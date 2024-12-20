@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "firebase:init": "node_modules/.bin/firebase init",
-    "firebase:emulators-start:offline": "node_modules/.bin/firebase --project demo-startup-incubator-platform-test emulators:start --only auth,firestore"
+    "firebase:emulators-start:offline": "node_modules/.bin/firebase --project demo-startup-incubator-platform-test emulators:start --only auth,firestore",
+    "firebase:deploy:rules": "node_modules/.bin/firebase deploy --only firestore:rules"
   },
   "dependencies": {
     "next": "15.1.2",
@@ -17,14 +18,18 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.1.2",
     "firebase-tools": "^13.29.1",
+    "jest": "^29.7.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "ts-jest": "^29.2.5",
     "typescript": "^5"
   }
 }
