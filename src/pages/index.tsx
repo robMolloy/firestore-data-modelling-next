@@ -1,16 +1,3 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export default function Home() {
   return (
     <ol>
@@ -33,20 +20,30 @@ export default function Home() {
             </code>
           </li>
           <li>
-            add `.eslintrc.json` file;
+            add <code>.eslintrc.json</code> file;
             <pre>
-              &#123; "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
-              "rules": &#123; "react/jsx-key": "error", "@typescript-eslint/no-unused-vars": [
-              "warn", &#123; "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" &#125; ],
-              "eqeqeq": "error", "react-hooks/exhaustive-deps": 0, "react/no-unescaped-entities": 0,
-              "@next/next/no-img-element": 0 &#125; &#125;
+              {`{ 
+    "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
+    "rules": { 
+      "react/jsx-key": "error", 
+      "@typescript-eslint/no-unused-vars": [ "warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" } ],
+      "eqeqeq": "error", 
+      "react-hooks/exhaustive-deps": 0, 
+      "react/no-unescaped-entities": 0,
+      "@next/next/no-img-element": 0 
+    }
+  }`}
             </pre>
           </li>
           <li>
             add <code>.prettierrc</code> file;
             <pre>
-              &#123; "tabWidth": 2, "useTabs": false, "printWidth": 100, "plugins":
-              ["prettier-plugin-tailwindcss"] &#125;
+              {`{ 
+  "tabWidth": 2,
+  "useTabs": false,
+  "printWidth": 100,
+  "plugins": ["prettier-plugin-tailwindcss"]
+};`}
             </pre>
           </li>
         </ol>
@@ -66,10 +63,11 @@ export default function Home() {
             case <code>demo-firestore-data-modelling-tests</code>, and will need to match the test
             setup later)
             <pre>
-              "firebase:init": "node_modules/.bin/firebase init",
-              "firebase:emulators-start:offline": "node_modules/.bin/firebase --project
-              demo-firestore-data-modelling-tests emulators:start --only auth,firestore",
-              "firebase:deploy:rules": "node_modules/.bin/firebase deploy --only firestore:rules",
+              {`
+"firebase:init": "node_modules/.bin/firebase init",
+"firebase:emulators-start:offline": "node_modules/.bin/firebase --project demo-firestore-data-modelling-tests emulators:start --only auth,firestore",
+"firebase:deploy:rules": "node_modules/.bin/firebase deploy --only firestore:rules",
+`}
             </pre>
           </li>
           <li>
@@ -94,6 +92,174 @@ export default function Home() {
             run the <code>firebase:emulators-start:offline</code> script in the terminal with{" "}
             <code>npm run firebase:emulators-start:offline</code> and edit the tests so that they
             pass/fail to make sure the test environment is working properly
+          </li>
+        </ol>
+      </li>
+      <li>
+        Setup Jest{" "}
+        <ol>
+          <li>
+            add testing packages to the devDependencies with{" "}
+            <code>npm i -D jest ts-jest @firebase/rules-unit-testing</code>
+          </li>
+          <li>
+            add the following to `package.json` scripts;
+            <pre>
+              {`
+"test": "jest --detectOpenHandles",
+"test:watch": "jest --watchAll --detectOpenHandles"`}
+            </pre>
+          </li>
+          <li>
+            add <code>jest.config</code> file with the following;{" "}
+            <pre>
+              {`// jest.config.js
+module.exports = {
+  preset: "ts-jest",
+  testEnvironment: "node",
+  testMatch: ["**/__tests__/**/*.ts?(x)", "**/?(*.)+(spec|test).ts?(x)"],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
+};`}
+            </pre>
+          </li>
+          <li>
+            create your first test file <code>initTestEnvironment.test.ts</code>
+            <pre>{`describe("check test environment is working", () => {
+  it("should pass", async () => {
+    expect(true).toBeTruthy();
+  });
+});`}</pre>
+          </li>
+          <li>
+            run the <code>test:watch</code> script in the terminal with{" "}
+            <code>npm run test:watch</code> and edit the tests so that they pass/fail to make sure
+            the test environment is working properly.
+          </li>
+        </ol>
+      </li>
+      <li>
+        Check that the emulator is working with jest by doing the following;{" "}
+        <ol>
+          <li>
+            create two new files;
+            <ol>
+              <li>
+                <code>firestoreTestUtils.ts</code>{" "}
+                <pre>{`import {
+    assertFails,
+    initializeTestEnvironment,
+  } from "@firebase/rules-unit-testing";
+  import { setLogLevel } from "firebase/firestore";
+  import { readFileSync } from "fs";
+  import path from "path";
+
+  export const setDefaultLogLevel = () => setLogLevel("error");
+
+  export const createTestEnvironment = async () => {
+    return initializeTestEnvironment({
+      projectId: "demo-firestore-data-modelling-tests",
+      firestore: {
+        rules: readFileSync(path.resolve(__dirname, "./firestore.rules"), "utf8"),
+        host: "127.0.0.1",
+        port: 8080,
+      },
+    });
+  };
+
+  export async function expectFirestorePermissionDenied(
+    promise: Promise<unknown>
+  ) {
+    return new Promise<void>(async (resolve) => {
+      const errorResult = await assertFails(promise);
+      expect(
+        ["permission-denied", "PERMISSION_DENIED"].includes(errorResult.code)
+      ).toBe(true);
+      resolve(undefined);
+    });
+  }`}</pre>
+              </li>
+              <li>
+                <code>generalFirestoreTests.test.ts</code>{" "}
+                <pre>{`import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
+import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  createTestEnvironment,
+  expectFirestorePermissionDenied,
+  setDefaultLogLevel,
+} from "./firestoreTestUtils";
+
+let testEnv: RulesTestEnvironment;
+
+describe("firestore rules for a randomCollection", () => {
+  beforeAll(async () => {
+    setDefaultLogLevel();
+    testEnv = await createTestEnvironment();
+  });
+  beforeEach(async () => {
+    await testEnv.clearFirestore();
+  });
+  afterAll(async () => {
+    await testEnv.cleanup();
+  });
+
+  it("should not allow read access to a random collection", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), "someRandomCollection", "id1");
+      await setDoc(docRef, { some: "data" });
+    });
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, "someRandomCollection", "id1");
+    await expectFirestorePermissionDenied(getDoc(docRef));
+  });
+
+  it("should not allow create access to a random collection", async () => {
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, "someRandomCollection", "id1");
+    await expectFirestorePermissionDenied(setDoc(docRef, { some: "data2" }));
+  });
+
+  it("should not allow update access to a random collection", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), "someRandomCollection", "id1");
+      await setDoc(docRef, { some: "data" });
+    });
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, "someRandomCollection", "id1");
+    await expectFirestorePermissionDenied(setDoc(docRef, { some: "data2" }));
+    await expectFirestorePermissionDenied(
+      setDoc(docRef, { more: "data" }, { merge: true })
+    );
+  });
+
+  it("should not allow delete access to a random collection", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), "someRandomCollection", "id1");
+      await setDoc(docRef, { some: "data" });
+    });
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, "someRandomCollection", "id1");
+    await expectFirestorePermissionDenied(deleteDoc(docRef));
+  });
+});`}</pre>
+              </li>
+            </ol>
+          </li>
+          <li>
+            run the following commands in separate terminals;
+            <ol>
+              <li>
+                <code>npm run test:watch</code>
+              </li>
+              <li>
+                <code>npm run firebase:emulators-start:offline</code>
+              </li>
+            </ol>
           </li>
         </ol>
       </li>
