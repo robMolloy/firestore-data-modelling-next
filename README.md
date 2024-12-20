@@ -7,14 +7,14 @@ Add any relevant commands to package.json
 1. Main Item 1
    1. Sub Item 1
    2. Sub Item 2
-      a. Nested Item a
-      b. Nested Item b
-      c. Nested Item c
+      1. Nested Item a
+      2. Nested Item b
+      3. Nested Item c
 2. Main Item 2
 
    1. Sub Item 1
-      a. Nested Item a
-      b. Nested Item b
+      1. Nested Item a
+      2. Nested Item b
    2. Sub Item 2
 
 3. Go to https://console.firebase.google.com
