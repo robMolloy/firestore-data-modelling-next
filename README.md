@@ -7,7 +7,7 @@ Add any relevant commands to package.json
 1.  Go to https://console.firebase.google.com
     1. create a project
     2. create a firestore and auth instance in your new project
-2.  Fresh install NextJS project
+2.  Fresh install NextJS project with `npx create-next-app@latest`
 3.  Setup linting
     1. install linting devDependencies with `npm i -D @typescript-eslint/eslint-plugin @typescript-eslint/parser prettier-plugin-tailwindcss`
     2. add <code>.eslintrc.json</code> file;
@@ -100,48 +100,48 @@ Add any relevant commands to package.json
 
        1. Create `firestoreTestUtils.ts` file
 
-       ```
-       import { assertFails, initializeTestEnvironment } from "@firebase/rules-unit-testing";
-       import { setLogLevel } from "firebase/firestore";
-       import { readFileSync } from "fs";
-       import path from "path";
+          ```
+          import { assertFails, initializeTestEnvironment } from "@firebase/rules-unit-testing";
+          import { setLogLevel } from "firebase/firestore";
+          import { readFileSync } from "fs";
+          import path from "path";
 
-       export const setDefaultLogLevel = () => setLogLevel("error");
+          export const setDefaultLogLevel = () => setLogLevel("error");
 
-       export const createTestEnvironment = async () => {
-         return initializeTestEnvironment({
-           projectId: "demo-firestore-data-modelling-tests",
-           firestore: {
-             rules: readFileSync(path.resolve(__dirname, "./firestore.rules"), "utf8"),
-             host: "127.0.0.1",
-             port: 8080,
-           },
-         });
-       };
+          export const createTestEnvironment = async () => {
+            return initializeTestEnvironment({
+              projectId: "demo-firestore-data-modelling-tests",
+              firestore: {
+                rules: readFileSync(path.resolve(__dirname, "./firestore.rules"), "utf8"),
+                host: "127.0.0.1",
+                port: 8080,
+              },
+            });
+          };
 
-       export async function expectFirestorePermissionDenied(
-         promise: Promise<unknown>,
-         options?: { onError?: () => void },
-       ) {
-         return new Promise<void>(async (resolve) => {
-           const hasFailed = await (async () => {
-             try {
-               const errorResult = await assertFails(promise);
-               return ["permission-denied", "PERMISSION_DENIED"].includes(errorResult.code);
-             } catch (error) {
-               return false;
-             }
-           })();
-           if (!hasFailed) {
-             if (options?.onError) options.onError();
-             else throw new Error("Expected request to fail, but it succeeded.");
-           } else expect(hasFailed).toBe(true);
-           resolve(undefined);
-         });
-       }
-       ```
+          export async function expectFirestorePermissionDenied(
+            promise: Promise<unknown>,
+            options?: { onError?: () => void },
+          ) {
+            return new Promise<void>(async (resolve) => {
+              const hasFailed = await (async () => {
+                try {
+                  const errorResult = await assertFails(promise);
+                  return ["permission-denied", "PERMISSION_DENIED"].includes(errorResult.code);
+                } catch (error) {
+                  return false;
+                }
+              })();
+              if (!hasFailed) {
+                if (options?.onError) options.onError();
+                else throw new Error("Expected request to fail, but it succeeded.");
+              } else expect(hasFailed).toBe(true);
+              resolve(undefined);
+            });
+          }
+          ```
 
-       10. create `generalFirestoreTests.test.ts` file
+       2. create `generalFirestoreTests.test.ts` file
 
        ```
        import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
