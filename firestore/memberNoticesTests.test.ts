@@ -18,18 +18,25 @@ describe("firestore rules for a randomCollection", () => {
     await testEnv.cleanup();
   });
 
-  it(`should not allow read access to a ${memberNoticesCollectionName} collection`, async () => {
+  it(`should not allow read access to ${memberNoticesCollectionName} collection if a user is unauthenticated `, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const docRef = doc(context.firestore(), memberNoticesCollectionName, "id1");
       await setDoc(docRef, { some: "data" });
     });
 
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const authedDb = testEnv.authenticatedContext("anyUid").firestore();
     const docRef = doc(unauthedDb, memberNoticesCollectionName, "id1");
-    const response = await fsUtils.isRequestGranted(getDoc(docRef));
+    const response = await fsUtils.isRequestDenied(getDoc(docRef));
     expect(response.permissionDenied).toBe(true);
+  });
 
+  it(`should allow read access to ${memberNoticesCollectionName} collection if a user is authenticated `, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), memberNoticesCollectionName, "id1");
+      await setDoc(docRef, { some: "data" });
+    });
+
+    const authedDb = testEnv.authenticatedContext("anyUid").firestore();
     const docRef2 = doc(authedDb, memberNoticesCollectionName, "id1");
     const response2 = await fsUtils.isRequestGranted(getDoc(docRef2));
     expect(response2.permissionGranted).toBe(true);
