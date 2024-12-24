@@ -58,13 +58,7 @@ export async function isRequestDenied(promise: Promise<unknown>) {
 export async function isRequestGranted(promise: Promise<unknown>) {
   try {
     const response = (await assertSucceeds(promise)) as DocumentSnapshot | unknown;
-    const data =
-      typeof response === "object" &&
-      response &&
-      "data" in response &&
-      typeof response.data === "function"
-        ? response.data()
-        : response;
+    const data = response instanceof DocumentSnapshot ? response.data() : response;
     return { permissionGranted: true, permissionDenied: false, data: data } as const;
   } catch (error) {
     return { permissionDenied: true, permissionGranted: false } as const;

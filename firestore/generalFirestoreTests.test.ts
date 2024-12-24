@@ -26,23 +26,18 @@ describe("firestore rules for a randomCollection", () => {
 
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
     const docRef = doc(unauthedDb, randomCollectionName, "id1");
-    const response = await fsUtils.isRequestGranted(getDoc(docRef));
-    expect(response.permissionGranted).toBe(true);
-    expect(response.data).toEqual({ some: "data" });
 
-    console.log(`generalFirestoreTests.test.ts:${/*LL*/ 33}`, { x: response.data });
+    const promises = [
+      fsUtils.isRequestGranted(getDoc(docRef)),
+      fsUtils.isRequestDenied(getDoc(docRef)),
+    ];
+    const results = await Promise.all(promises);
+    const isAllDenied = results.every((x) => x.permissionDenied);
+    if (isAllDenied) return;
 
-    // const promises = [
-    //   fsUtils.isRequestGranted(getDoc(docRef)),
-    //   fsUtils.isRequestDenied(getDoc(docRef)),
-    // ];
-    // const results = await Promise.all(promises);
-    // const isAllDenied = results.every((x) => x.permissionDenied);
-    // if (isAllDenied) return;
-
-    // throw new Error(
-    //   `permission granted from to getDoc from ${randomCollectionName} but should not be`,
-    // );
+    throw new Error(
+      `permission granted from to getDoc from ${randomCollectionName} but should not be`,
+    );
   });
 
   it("should not allow create access to a random collection", async () => {

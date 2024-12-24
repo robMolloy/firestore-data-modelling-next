@@ -6,6 +6,9 @@ service cloud.firestore {
       allow get, list, create, update, delete: if false;
     }
     match /randomCollection/{document=**} {
+      allow get, list, create, update, delete: if false;
+    }
+    match /publicNotices/{document=**} {
       allow get: if true;
       allow list, create, update, delete: if false;
     }
