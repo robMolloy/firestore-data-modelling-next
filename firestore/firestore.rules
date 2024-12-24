@@ -5,8 +5,9 @@ service cloud.firestore {
     match /{document=**} {
       allow get, list, create, update, delete: if false;
     }
-    match /someRandomCollection/{document=**} {
-      allow create: if true;
+    match /randomCollection/{document=**} {
+      allow get: if true;
+      allow list, create, update, delete: if false;
     }
   }
 }

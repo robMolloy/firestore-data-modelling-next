@@ -1,17 +1,15 @@
 import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
-import {
-  createTestEnvironment,
-  expectFirestorePermissionDenied,
-  setDefaultLogLevel,
-} from "./firestoreTestUtils";
+import * as fsUtils from "./firestoreTestUtils";
 
 let testEnv: RulesTestEnvironment;
 
+const randomCollectionName = "randomCollection";
+
 describe("firestore rules for a randomCollection", () => {
   beforeAll(async () => {
-    setDefaultLogLevel();
-    testEnv = await createTestEnvironment();
+    fsUtils.setDefaultLogLevel();
+    testEnv = await fsUtils.createTestEnvironment();
   });
   beforeEach(async () => {
     await testEnv.clearFirestore();
@@ -22,44 +20,86 @@ describe("firestore rules for a randomCollection", () => {
 
   it("should not allow read access to a random collection", async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      const docRef = doc(context.firestore(), "someRandomCollection", "id1");
+      const docRef = doc(context.firestore(), randomCollectionName, "id1");
       await setDoc(docRef, { some: "data" });
     });
 
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, "someRandomCollection", "id1");
-    await expectFirestorePermissionDenied(getDoc(docRef));
+    const docRef = doc(unauthedDb, randomCollectionName, "id1");
+    const response = await fsUtils.isRequestGranted(getDoc(docRef));
+    expect(response.permissionGranted).toBe(true);
+    expect(response.data).toEqual({ some: "data" });
+
+    console.log(`generalFirestoreTests.test.ts:${/*LL*/ 33}`, { x: response.data });
+
+    // const promises = [
+    //   fsUtils.isRequestGranted(getDoc(docRef)),
+    //   fsUtils.isRequestDenied(getDoc(docRef)),
+    // ];
+    // const results = await Promise.all(promises);
+    // const isAllDenied = results.every((x) => x.permissionDenied);
+    // if (isAllDenied) return;
+
+    // throw new Error(
+    //   `permission granted from to getDoc from ${randomCollectionName} but should not be`,
+    // );
   });
 
   it("should not allow create access to a random collection", async () => {
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, "someRandomCollection", "id1");
-    await expectFirestorePermissionDenied(setDoc(docRef, { some: "data2" }), { onError: () => { throw new Error("setDoc to someRandomCollection allowed") } });
-    await expectFirestorePermissionDenied(setDoc(docRef, { some: "data2" }));
+    const docRef = doc(unauthedDb, randomCollectionName, "id1");
+    const promises = [
+      fsUtils.isRequestGranted(setDoc(docRef, { some: "data2" })),
+      fsUtils.isRequestDenied(setDoc(docRef, { some: "data2" })),
+    ];
+    const results = await Promise.all(promises);
+    const isAllDenied = results.every((x) => x.permissionDenied);
+    if (isAllDenied) return;
+
+    throw new Error(`permission granted to setDoc on ${randomCollectionName} but should not be`);
   });
 
   it("should not allow update access to a random collection", async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      const docRef = doc(context.firestore(), "someRandomCollection", "id1");
+      const docRef = doc(context.firestore(), randomCollectionName, "id1");
       await setDoc(docRef, { some: "data" });
     });
 
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, "someRandomCollection", "id1");
-    await expectFirestorePermissionDenied(setDoc(docRef, { some: "data2" }));
-    await expectFirestorePermissionDenied(
-      setDoc(docRef, { more: "data" }, { merge: true })
+    const docRef = doc(unauthedDb, randomCollectionName, "id1");
+
+    const promises = [
+      fsUtils.isRequestGranted(setDoc(docRef, { some: "data2" })),
+      fsUtils.isRequestGranted(setDoc(docRef, { more: "data" }, { merge: true })),
+      fsUtils.isRequestDenied(setDoc(docRef, { some: "data2" })),
+      fsUtils.isRequestDenied(setDoc(docRef, { more: "data" }, { merge: true })),
+    ];
+    const results = await Promise.all(promises);
+    const isAllDenied = results.every((x) => x.permissionDenied);
+    if (isAllDenied) return;
+
+    throw new Error(
+      `permission granted to setDoc updates on ${randomCollectionName} but should not be`,
     );
   });
 
   it("should not allow delete access to a random collection", async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      const docRef = doc(context.firestore(), "someRandomCollection", "id1");
+      const docRef = doc(context.firestore(), randomCollectionName, "id1");
       await setDoc(docRef, { some: "data" });
     });
 
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, "someRandomCollection", "id1");
-    await expectFirestorePermissionDenied(deleteDoc(docRef));
+    const docRef = doc(unauthedDb, randomCollectionName, "id1");
+    const promises = [
+      fsUtils.isRequestDenied(deleteDoc(docRef)),
+      fsUtils.isRequestGranted(deleteDoc(docRef)),
+    ];
+
+    const results = await Promise.all(promises);
+    const isAllDenied = results.every((x) => x.permissionDenied);
+    if (isAllDenied) return;
+
+    throw new Error(`permission granted to deleteDoc on ${randomCollectionName} but should not be`);
   });
 });

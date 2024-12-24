@@ -1,5 +1,9 @@
-import { assertFails, initializeTestEnvironment } from "@firebase/rules-unit-testing";
-import { setLogLevel } from "firebase/firestore";
+import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+} from "@firebase/rules-unit-testing";
+import { setLogLevel, DocumentSnapshot } from "firebase/firestore";
 import { readFileSync } from "fs";
 import path from "path";
 
@@ -16,7 +20,7 @@ export const createTestEnvironment = async () => {
   });
 };
 
-export async function expectFirestorePermissionDenied(
+export async function expectPermissionDenied(
   promise: Promise<unknown>,
   options?: { onError?: () => void },
 ) {
@@ -35,4 +39,34 @@ export async function expectFirestorePermissionDenied(
     } else expect(hasFailed).toBe(true);
     resolve(undefined);
   });
+}
+
+export async function isRequestDenied(promise: Promise<unknown>) {
+  try {
+    const errorResult = await assertFails(promise);
+    const permissionDenied = ["permission-denied", "PERMISSION_DENIED"].includes(errorResult.code);
+
+    return {
+      permissionDenied,
+      permissionGranted: !permissionDenied,
+      error: permissionDenied ? "PERMISSION_DENIED" : undefined,
+    } as const;
+  } catch (error) {
+    return { permissionDenied: false, permissionGranted: true } as const;
+  }
+}
+export async function isRequestGranted(promise: Promise<unknown>) {
+  try {
+    const response = (await assertSucceeds(promise)) as DocumentSnapshot | unknown;
+    const data =
+      typeof response === "object" &&
+      response &&
+      "data" in response &&
+      typeof response.data === "function"
+        ? response.data()
+        : response;
+    return { permissionGranted: true, permissionDenied: false, data: data } as const;
+  } catch (error) {
+    return { permissionDenied: true, permissionGranted: false } as const;
+  }
 }
