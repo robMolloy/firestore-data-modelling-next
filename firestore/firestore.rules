@@ -1,5 +1,9 @@
 rules_version = '2';
 
+function getIncomingAuth() {
+  return request.auth;
+}
+
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
@@ -10,6 +14,10 @@ service cloud.firestore {
     }
     match /publicNotices/{document=**} {
       allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+    match /memberNotices/{document=**} {
+      allow get: if getIncomingAuth() != null;
       allow list, create, update, delete: if false;
     }
   }
