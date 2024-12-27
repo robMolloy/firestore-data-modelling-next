@@ -1,7 +1,19 @@
 rules_version = '2';
 
+function isNow(dt) {
+  return dt is timestamp && dt == request.time;
+}
 function getIncomingAuth() {
   return request.auth;
+}
+function getIncomingId() {
+  return request.resource.id;
+}
+function getIncomingData() {
+  return request.resource.data;
+}
+function getExistingData() {
+  return resource.data;
 }
 
 service cloud.firestore {
@@ -19,6 +31,25 @@ service cloud.firestore {
     match /memberNotices/{document=**} {
       allow get: if getIncomingAuth() != null;
       allow list, create, update, delete: if false;
+    }
+    match /userTodos/{document=**} {
+      function canGetUserTodo(){
+        return getIncomingAuth().uid == getExistingData().uid;
+      } 
+      function canCreateUserTodo(){
+        let incoming = getIncomingData();
+        let keys = ['id', 'uid', 'task', 'completed', 'createdAt', 'updatedAt'];
+        return incoming.keys().hasAll(keys)
+          && incoming.keys().hasOnly(keys)
+          && getIncomingId() == incoming.id
+          && isNow(incoming.createdAt)
+          && isNow(incoming.updatedAt)
+          && getIncomingAuth().uid == incoming.uid;
+      }
+      allow get: if canGetUserTodo();
+      allow create: if canCreateUserTodo();
+      // allow update: if canUpdateUserTodo();
+      // allow list, create, update, delete: if false;
     }
   }
 }
