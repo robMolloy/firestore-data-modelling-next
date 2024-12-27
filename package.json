@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "tsc": "tsc --noemit --watch",
     "firebase:init": "node_modules/.bin/firebase init",
     "firebase:emulators-start:offline": "node_modules/.bin/firebase --project demo-firestore-data-modelling-tests emulators:start --only auth,firestore",
     "firebase:deploy:rules": "node_modules/.bin/firebase deploy --only firestore:rules",
