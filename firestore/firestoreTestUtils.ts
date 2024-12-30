@@ -3,7 +3,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { setLogLevel, DocumentSnapshot } from "firebase/firestore";
+import { DocumentSnapshot, serverTimestamp, setLogLevel, Timestamp } from "firebase/firestore";
 import { readFileSync } from "fs";
 import path from "path";
 
@@ -18,6 +18,30 @@ export const createTestEnvironment = async () => {
       port: 8080,
     },
   });
+};
+
+export const removeKey = <T extends object, K extends keyof T>(key: K, object: T): Omit<T, K> => {
+  const { [key]: _, ...rest } = object;
+  return rest;
+};
+
+export type TServerTimestamp = ReturnType<typeof serverTimestamp>;
+export type TTimestamp = ReturnType<typeof Timestamp.now>;
+
+type Prettify<T> = {
+  [k in keyof T]: T[k];
+} & {};
+
+export const creatify = <T extends object>(
+  obj: T,
+): Prettify<T & { createdAt: TServerTimestamp; updatedAt: TServerTimestamp }> => {
+  return { ...obj, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+};
+
+export const updatify = <T extends object>(
+  object: T,
+): Prettify<T & { updatedAt: TServerTimestamp }> => {
+  return { ...object, updatedAt: serverTimestamp() };
 };
 
 export async function expectPermissionDenied(
