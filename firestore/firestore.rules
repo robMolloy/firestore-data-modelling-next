@@ -54,11 +54,12 @@ service cloud.firestore {
         let incoming = getIncomingData();
         let existing = getExistingData();
         let keys = getUserTodosKeys();
-        return incoming.diff(existing).affectedKeys().hasOnly(['task', 'completed', 'updatedAt']) // UTU0
-          && incoming.keys().hasOnly(keys) // UTU1
-          && incoming.keys().hasAll(keys) // UTU2
-          && isNow(incoming.updatedAt) // UTU3
-          && getIncomingAuth().uid == existing.uid // UTU4
+        // UT.U.0.A
+        return incoming.diff(existing).affectedKeys().hasOnly(['task', 'completed', 'updatedAt']) // UT.U.1.D
+          && incoming.keys().hasOnly(keys) // UT.U.2.D
+          && incoming.keys().hasAll(keys) // UT.U.3.D
+          && isNow(incoming.updatedAt) // UT.U.4.D
+          && getIncomingAuth().uid == existing.uid // UT.U.5.D
       }
       allow get: if canGetUserTodo();
       allow create: if canCreateUserTodo();
