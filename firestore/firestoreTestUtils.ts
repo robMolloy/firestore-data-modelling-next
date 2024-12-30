@@ -28,20 +28,17 @@ export const removeKey = <T extends object, K extends keyof T>(key: K, object: T
 export type TServerTimestamp = ReturnType<typeof serverTimestamp>;
 export type TTimestamp = ReturnType<typeof Timestamp.now>;
 
-type Prettify<T> = {
-  [k in keyof T]: T[k];
-} & {};
-
-export const creatify = <T extends object>(
-  obj: T,
-): Prettify<T & { createdAt: TServerTimestamp; updatedAt: TServerTimestamp }> => {
+export const creatifyDoc = <T extends object>(obj: T) => {
   return { ...obj, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
 };
 
-export const updatify = <T extends object>(
-  object: T,
-): Prettify<T & { updatedAt: TServerTimestamp }> => {
+export const updatifyDoc = <T extends object>(object: T) => {
   return { ...object, updatedAt: serverTimestamp() };
+};
+
+export const getNotNowTimestamp = () => {
+  const now = Timestamp.now();
+  return { ...now, nanoseconds: now.nanoseconds - 1 };
 };
 
 export async function expectPermissionDenied(
