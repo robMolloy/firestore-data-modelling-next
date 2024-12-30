@@ -33,12 +33,15 @@ service cloud.firestore {
       allow list, create, update, delete: if false;
     }
     match /userTodos/{document=**} {
+      function getUserTodosKeys(){
+        return ['id', 'uid', 'task', 'completed', 'createdAt', 'updatedAt'];
+      }
       function canGetUserTodo(){
         return getIncomingAuth().uid == getExistingData().uid;
       } 
       function canCreateUserTodo(){
         let incoming = getIncomingData();
-        let keys = ['id', 'uid', 'task', 'completed', 'createdAt', 'updatedAt'];
+        let keys = getUserTodosKeys();
         return incoming.keys().hasAll(keys)
           && incoming.keys().hasOnly(keys)
           && getIncomingId() == incoming.id
@@ -46,9 +49,19 @@ service cloud.firestore {
           && isNow(incoming.updatedAt)
           && getIncomingAuth().uid == incoming.uid;
       }
+      function canUpdateUserTodo(){
+        let incoming = getIncomingData();
+        let existing = getExistingData();
+        let keys = getUserTodosKeys();
+        return incoming.diff(existing).affectedKeys().hasOnly(['task', 'completed', 'updatedAt']) // UTU0
+          && incoming.keys().hasOnly(keys) // UTU1
+          && incoming.keys().hasAll(keys) // UTU2
+          && isNow(incoming.updatedAt) // UTU3
+          && getIncomingAuth().uid == existing.uid // UTU4
+      }
       allow get: if canGetUserTodo();
       allow create: if canCreateUserTodo();
-      // allow update: if canUpdateUserTodo();
+      allow update: if canUpdateUserTodo();
       // allow list, create, update, delete: if false;
     }
   }
