@@ -37,17 +37,18 @@ service cloud.firestore {
         return ['id', 'uid', 'task', 'completed', 'createdAt', 'updatedAt'];
       }
       function canGetUserTodo(){
-        return getIncomingAuth().uid == getExistingData().uid;
+        return getIncomingAuth().uid == getExistingData().uid; // UTG0 - UTG0.unauth,  UTG0.auth,  UTG0.wrongUser
       } 
       function canCreateUserTodo(){
         let incoming = getIncomingData();
         let keys = getUserTodosKeys();
-        return incoming.keys().hasAll(keys)
-          && incoming.keys().hasOnly(keys)
-          && getIncomingId() == incoming.id
-          && isNow(incoming.createdAt)
-          && isNow(incoming.updatedAt)
-          && getIncomingAuth().uid == incoming.uid;
+        // UT.C.0.A
+        return incoming.keys().hasAll(keys) // UT.C.1.D
+          && incoming.keys().hasOnly(keys) // UT.C.2.D
+          && getIncomingId() == incoming.id // UT.C.3.D
+          && isNow(incoming.createdAt) // UT.C.4.D
+          && isNow(incoming.updatedAt) // UT.C.5.D
+          && getIncomingAuth().uid == incoming.uid // UT.C.6 - UT.C.6.D.unauth,  UT.C.6.D.wrongUser
       }
       function canUpdateUserTodo(){
         let incoming = getIncomingData();

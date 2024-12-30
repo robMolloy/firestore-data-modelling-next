@@ -59,7 +59,18 @@ describe(`firestore rules for ${userTodosCollectionName} collection`, () => {
     expect(response.permissionDenied).toBe(true);
   });
 
-  it(`should deny create access if missing key to ${userTodosCollectionName}`, async () => {
+  it(`UT.C.0.A should allow create access if user is authenticated and data is valid to ${userTodosCollectionName}`, async () => {
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(authedDb, userTodosCollectionName, userTodo1.id);
+
+    const createDocResult = await fsUtils.isRequestGranted(
+      setDoc(docRef, { ...userTodo1, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }),
+    );
+
+    expect(createDocResult.permissionGranted).toBe(true);
+  });
+
+  it(`UTC0 should deny create access if missing key to ${userTodosCollectionName}`, async () => {
     const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
     const docRef = doc(authedDb, userTodosCollectionName, userTodo1.id);
 
@@ -75,7 +86,7 @@ describe(`firestore rules for ${userTodosCollectionName} collection`, () => {
     expect(isAllDenied).toBe(true);
   });
 
-  it(`should deny create access if missing key to ${userTodosCollectionName}`, async () => {
+  it(`UTC1 should deny create access if missing key to ${userTodosCollectionName}`, async () => {
     const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
     const docRef = doc(authedDb, userTodosCollectionName, userTodo1.id);
 
@@ -85,18 +96,24 @@ describe(`firestore rules for ${userTodosCollectionName} collection`, () => {
     expect(result.permissionDenied).toBe(true);
   });
 
-  it(`should allow create access if auth.uid == incoming.uid to ${userTodosCollectionName}`, async () => {
+  it(`UTC2 should deny access if getIncomingId() != incoming.id to ${userTodosCollectionName}`, async () => {
     const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
     const docRef = doc(authedDb, userTodosCollectionName, userTodo1.id);
 
-    const createDocResult = await fsUtils.isRequestDenied(
-      setDoc(docRef, { ...userTodo1, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }),
-    );
+    const additionalKeyUserTodo = { ...createUserTodo, id: `not_${userTodo1.id}` };
+    const result = await fsUtils.isRequestDenied(setDoc(docRef, additionalKeyUserTodo));
 
-    if (createDocResult.permissionDenied)
-      throw new Error(
-        `permission denied to create doc on ${userTodosCollectionName} but should not be`,
-      );
+    expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`UTC3 should deny access if isNow(incoming.createdAt) to ${userTodosCollectionName}`, async () => {
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(authedDb, userTodosCollectionName, userTodo1.id);
+
+    const additionalKeyUserTodo = { ...createUserTodo, id: `not_${userTodo1.id}` };
+    const result = await fsUtils.isRequestDenied(setDoc(docRef, additionalKeyUserTodo));
+
+    expect(result.permissionDenied).toBe(true);
   });
 
   it(`should deny create access if auth.uid != incoming.uid to ${userTodosCollectionName}`, async () => {
