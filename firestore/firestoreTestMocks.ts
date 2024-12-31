@@ -7,6 +7,8 @@ export type TUserTodoKey = keyof TUserTodo;
 export const collectionNames = {
   userTodos: "userTodos",
   memberNotices: "memberNotices",
+  todoGroups: "todoGroups",
+  groupTodos: "groupTodos",
 } as const;
 
 export const timestampSchema = z.object({ seconds: z.number(), nanoseconds: z.number() });
