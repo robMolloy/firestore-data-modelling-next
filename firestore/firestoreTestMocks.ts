@@ -17,11 +17,11 @@ export const userTodoSchema = z.object({
   updatedAt: z.object({ seconds: z.number(), nanoseconds: z.number() }),
 });
 
-export const userTodo1: z.infer<typeof userTodoSchema> = {
+export const userTodo1 = {
   id: "id1",
   uid: "uid1",
   task: "uid1",
   completed: false,
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
-};
+} as const satisfies TUserTodo;

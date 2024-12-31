@@ -59,7 +59,7 @@ service cloud.firestore {
           && incoming.keys().hasAll(keys) // UT.U.2.D
           && incoming.keys().hasOnly(keys) // UT.U.3.D
           && isNow(incoming.updatedAt) // UT.U.4.D
-          && getIncomingAuth().uid == existing.uid // UT.U.5.D
+          && getIncomingAuth().uid == existing.uid // UT.U.5.D - UT.U.5.D.unauth,  UT.U.5.D.wrongUser
       }
       allow get: if canGetUserTodo();
       allow create: if canCreateUserTodo();

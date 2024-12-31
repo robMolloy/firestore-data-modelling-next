@@ -88,7 +88,7 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     expect(isAllDenied).toBe(true);
   });
 
-  it(`UT.C.2.D should deny create access if missing key to ${collectionNames.userTodos}`, async () => {
+  it(`UT.C.2.D should deny create access if additional key to ${collectionNames.userTodos}`, async () => {
     const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
     const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
 
@@ -187,7 +187,7 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     expect(updateDocResult.permissionGranted).toBe(true);
   });
 
-  it(`UT.U.1.D should deny update access if missing key to ${collectionNames.userTodos}`, async () => {
+  it(`UT.U.2.D should deny update access if missing key to ${collectionNames.userTodos}`, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
       await setDoc(docRef, userTodo1);
@@ -204,5 +204,60 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
       const updateDocResult = await isRequestDenied(setDoc(docRef, todo));
       expect(updateDocResult.permissionDenied).toBe(true);
     }
+  });
+
+  it(`UT.U.3.D should deny create access if missing key to ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
+
+    const additionalKeyUserTodo = { ...creatifyDoc(userTodo1), another: "key" };
+    const result = await isRequestDenied(setDoc(docRef, additionalKeyUserTodo));
+
+    expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`UT.U.4.D should deny update if isNotNow(incoming.updatedAt) to ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
+
+    const incorrectUpdatedAtUserTodo = { ...userTodo1, updatedAt: getNotNowTimestamp() };
+    const result = await isRequestDenied(setDoc(docRef, incorrectUpdatedAtUserTodo));
+
+    expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`UT.U.5.D.wrongUser should deny update access if auth.uid != incoming.uid to ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+    const authedDb = testEnv.authenticatedContext(`not_${userTodo1.uid}`).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
+
+    const updateDocResult = await isRequestDenied(setDoc(docRef, updatifyDoc(userTodo1)));
+
+    expect(updateDocResult.permissionDenied).toBe(true);
+  });
+
+  it(`UT.U.5.D.unauth should deny update access if auth.uid == null to ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+
+    const updateDocResult = await isRequestDenied(setDoc(docRef, updatifyDoc(userTodo1)));
+
+    expect(updateDocResult.permissionDenied).toBe(true);
   });
 });
