@@ -56,8 +56,8 @@ service cloud.firestore {
         let keys = getUserTodosKeys();
         // UT.U.0.A
         return incoming.diff(existing).affectedKeys().hasOnly(['task', 'completed', 'updatedAt']) // UT.U.1.D
-          && incoming.keys().hasOnly(keys) // UT.U.2.D
-          && incoming.keys().hasAll(keys) // UT.U.3.D
+          && incoming.keys().hasAll(keys) // UT.U.2.D
+          && incoming.keys().hasOnly(keys) // UT.U.3.D
           && isNow(incoming.updatedAt) // UT.U.4.D
           && getIncomingAuth().uid == existing.uid // UT.U.5.D
       }

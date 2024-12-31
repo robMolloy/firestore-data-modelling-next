@@ -1,6 +1,9 @@
 import { Timestamp } from "firebase/firestore";
 import { z } from "zod";
 
+export type TUserTodo = z.infer<typeof userTodoSchema>;
+export type TUserTodoKey = keyof TUserTodo;
+
 export const collectionNames = {
   userTodos: "userTodos",
 };
@@ -18,7 +21,7 @@ export const userTodo1: z.infer<typeof userTodoSchema> = {
   id: "id1",
   uid: "uid1",
   task: "uid1",
-  completed: true,
+  completed: false,
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
 };

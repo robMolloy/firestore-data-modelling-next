@@ -1,23 +1,18 @@
 import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { collectionNames, userTodo1, userTodoSchema } from "./firestoreTestMocks";
+import { collectionNames, TUserTodo, TUserTodoKey, userTodo1 } from "./firestoreTestMocks";
 import {
-  setDefaultLogLevel,
   createTestEnvironment,
+  creatifyDoc,
+  getNotNowTimestamp,
   isRequestDenied,
   isRequestGranted,
-  creatifyDoc,
   removeKey,
-  getNotNowTimestamp,
+  setDefaultLogLevel,
   updatifyDoc,
 } from "./firestoreTestUtils";
-import { z } from "zod";
 
 let testEnv: RulesTestEnvironment;
-
-// const updateUserTodo = fsUtils.updatify(userTodo1);
-
-type TUserTodoKey = keyof z.infer<typeof userTodoSchema>;
 
 describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
   beforeAll(async () => {
@@ -148,6 +143,15 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     expect(createDocResult.permissionDenied).toBe(true);
   });
 
+  it(`UT.C.6.D.unauth should deny create access if user is unauthenticated to ${collectionNames.userTodos}`, async () => {
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+
+    const createDocResult = await isRequestDenied(setDoc(docRef, creatifyDoc(userTodo1)));
+
+    expect(createDocResult.permissionDenied).toBe(true);
+  });
+
   it(`UT.U.0.A should allow update access if user is authenticated and owns the doc to ${collectionNames.userTodos}`, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
@@ -158,20 +162,47 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
 
     const updateDocResult = await isRequestGranted(
-      setDoc(
-        docRef,
-        updatifyDoc({ ...userTodo1, task: "not task" } as z.infer<typeof userTodoSchema>),
-      ),
+      setDoc(docRef, updatifyDoc({ ...userTodo1, task: "new" } as TUserTodo)),
+    );
+    expect(updateDocResult.permissionGranted).toBe(true);
+    const updateDocResult2 = await isRequestGranted(
+      setDoc(docRef, updatifyDoc({ ...userTodo1, completed: true } as TUserTodo)),
+    );
+    expect(updateDocResult2.permissionGranted).toBe(true);
+  });
+
+  it(`UT.U.1.D should deny update access if wrong keys are changed ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
+
+    const updateDocResult = await isRequestGranted(
+      setDoc(docRef, updatifyDoc({ ...userTodo1, task: "new" } as TUserTodo)),
     );
 
     expect(updateDocResult.permissionGranted).toBe(true);
   });
-  it(`UT.C.6.D.unauth should deny create access if user is unauthenticated to ${collectionNames.userTodos}`, async () => {
-    const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
 
-    const createDocResult = await isRequestDenied(setDoc(docRef, creatifyDoc(userTodo1)));
+  it(`UT.U.1.D should deny update access if missing key to ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
 
-    expect(createDocResult.permissionDenied).toBe(true);
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
+
+    const createUserTodoKeys = Object.keys(creatifyDoc(userTodo1)) as TUserTodoKey[];
+    const missingKeyUserTodos = createUserTodoKeys.map((key) =>
+      removeKey(key, updatifyDoc(userTodo1)),
+    );
+    for (const todo of missingKeyUserTodos) {
+      const updateDocResult = await isRequestDenied(setDoc(docRef, todo));
+      expect(updateDocResult.permissionDenied).toBe(true);
+    }
   });
 });
