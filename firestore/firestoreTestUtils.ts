@@ -3,7 +3,14 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { DocumentSnapshot, serverTimestamp, setLogLevel, Timestamp } from "firebase/firestore";
+import {
+  DocumentSnapshot,
+  serverTimestamp,
+  setLogLevel,
+  Timestamp,
+  DocumentData,
+  QuerySnapshot,
+} from "firebase/firestore";
 import { readFileSync } from "fs";
 import path from "path";
 
@@ -76,10 +83,18 @@ export async function isRequestDenied(promise: Promise<unknown>) {
     return { permissionDenied: false, permissionGranted: true } as const;
   }
 }
-export async function isRequestGranted(promise: Promise<unknown>) {
+export async function isRequestGranted<T extends Promise<unknown>>(promise: T) {
   try {
-    const response = (await assertSucceeds(promise)) as DocumentSnapshot | unknown;
-    const data = response instanceof DocumentSnapshot ? response.data() : response;
+    const response = (await assertSucceeds(promise)) as
+      | QuerySnapshot<DocumentData, DocumentData>
+      | DocumentSnapshot
+      | unknown;
+    const data =
+      response instanceof QuerySnapshot
+        ? response.docs.map((x) => x.data())
+        : response instanceof DocumentSnapshot
+          ? response.data()
+          : response;
     return { permissionGranted: true, permissionDenied: false, data: data } as const;
   } catch (error) {
     return { permissionDenied: true, permissionGranted: false } as const;

@@ -1,5 +1,14 @@
 import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  setDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { collectionNames, TUserTodo, TUserTodoKey, userTodo1 } from "./firestoreTestMocks";
 import {
   createTestEnvironment,
@@ -26,7 +35,7 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     await testEnv.cleanup();
   });
 
-  it(`should allow get access if auth.uid == existing.uid from ${collectionNames.userTodos}`, async () => {
+  it(`UT.G.0.A should allow get access if auth.uid == existing.uid from ${collectionNames.userTodos}`, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
       await setDoc(docRef, userTodo1);
@@ -39,7 +48,7 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     expect(response.data).toEqual(userTodo1);
   });
 
-  it(`should deny get access if unauthenticated user requests from ${collectionNames.userTodos}`, async () => {
+  it(`UT.G.1.D.unauth should deny get access if unauthenticated user requests from ${collectionNames.userTodos}`, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
       await setDoc(docRef, userTodo1);
@@ -51,7 +60,7 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     expect(response.permissionDenied).toBe(true);
   });
 
-  it(`should deny get access if auth.uid != existing.uid from ${collectionNames.userTodos}`, async () => {
+  it(`UT.G.1.D.wrongUser should deny get access if auth.uid != existing.uid from ${collectionNames.userTodos}`, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
       await setDoc(docRef, userTodo1);
@@ -60,6 +69,55 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     const unauthedDb = testEnv.authenticatedContext(`not_${userTodo1.uid}`).firestore();
     const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
     const response = await isRequestGranted(getDoc(docRef));
+    expect(response.permissionDenied).toBe(true);
+  });
+
+  it(`UT.L.0.A should allow list access if auth.uid == existing.uid from ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const q = query(
+      collection(authedDb, collectionNames.userTodos),
+      where("uid", "==", userTodo1.uid),
+    );
+
+    const response = await isRequestGranted(getDocs(q));
+    expect(response.permissionGranted).toBe(true);
+    expect(response.data).toEqual([userTodo1]);
+  });
+
+  it(`UT.L.1.D.unauth should deny list access if unauthenticated user requests from ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const q = query(
+      collection(unauthedDb, collectionNames.userTodos),
+      where("uid", "==", `not_${userTodo1.uid}`),
+    );
+
+    const response = await isRequestDenied(getDocs(q));
+    expect(response.permissionDenied).toBe(true);
+  });
+
+  it(`UT.L.1.D.wrongUser should deny list access if auth.uid != existing.uid from ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const q = query(
+      collection(authedDb, collectionNames.userTodos),
+      where("uid", "==", `not_${userTodo1.uid}`),
+    );
+
+    const response = await isRequestDenied(getDocs(q));
     expect(response.permissionDenied).toBe(true);
   });
 
@@ -259,5 +317,41 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     const updateDocResult = await isRequestDenied(setDoc(docRef, updatifyDoc(userTodo1)));
 
     expect(updateDocResult.permissionDenied).toBe(true);
+  });
+
+  it(`UT.D.0.A should allow delete if auth.uid == existing.uid from ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+
+    const unauthedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+    const response = await isRequestGranted(deleteDoc(docRef));
+    expect(response.permissionGranted).toBe(true);
+  });
+
+  it(`UT.D.1.D.unauth should deny delete if unauthenticated user requests from ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+    const response = await isRequestGranted(deleteDoc(docRef));
+    expect(response.permissionDenied).toBe(true);
+  });
+
+  it(`UT.D.1.D.wrongUser should deny delete if auth.uid != existing.uid from ${collectionNames.userTodos}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.userTodos, userTodo1.id);
+      await setDoc(docRef, userTodo1);
+    });
+
+    const unauthedDb = testEnv.authenticatedContext(`not_${userTodo1.uid}`).firestore();
+    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+    const response = await isRequestGranted(deleteDoc(docRef));
+    expect(response.permissionDenied).toBe(true);
   });
 });

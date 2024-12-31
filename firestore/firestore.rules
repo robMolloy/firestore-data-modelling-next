@@ -15,6 +15,9 @@ function getIncomingData() {
 function getExistingData() {
   return resource.data;
 }
+function getParams() {
+  return resource.data;
+}
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -37,7 +40,12 @@ service cloud.firestore {
         return ['id', 'uid', 'task', 'completed', 'createdAt', 'updatedAt'];
       }
       function canGetUserTodo(){
-        return getIncomingAuth().uid == getExistingData().uid; // UTG0 - UTG0.unauth,  UTG0.auth,  UTG0.wrongUser
+        // UT.G.0.A
+        return getIncomingAuth().uid == getExistingData().uid; // UT.G.1.D - UT.G.1.D.unauth, UT.G.1.D.wrongUser
+      } 
+      function canListUserTodo(){
+        // UT.L.0.A
+        return getIncomingAuth().uid == getParams().uid; // UT.L.1.D - UT.L.1.D.unauth, UT.L.1.D.wrongUser
       } 
       function canCreateUserTodo(){
         let incoming = getIncomingData();
@@ -61,10 +69,15 @@ service cloud.firestore {
           && isNow(incoming.updatedAt) // UT.U.4.D
           && getIncomingAuth().uid == existing.uid // UT.U.5.D - UT.U.5.D.unauth,  UT.U.5.D.wrongUser
       }
+      function canDeleteUserTodo(){
+        // UT.D.0.A
+        return getIncomingAuth().uid == getParams().uid; // UT.D.1.D - UT.D.1.D.unauth, UT.D.1.D.wrongUser
+      }
       allow get: if canGetUserTodo();
+      allow list: if canListUserTodo();
       allow create: if canCreateUserTodo();
       allow update: if canUpdateUserTodo();
-      // allow list, create, update, delete: if false;
+      allow delete: if canDeleteUserTodo();
     }
   }
 }
