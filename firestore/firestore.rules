@@ -32,8 +32,19 @@ service cloud.firestore {
       allow list, create, update, delete: if false;
     }
     match /memberNotices/{document=**} {
-      allow get: if getIncomingAuth() != null;
-      allow list, create, update, delete: if false;
+      function canGetMemberNotices(){
+        // MN.G.0.A
+        return getIncomingAuth() != null; // MN.G.1.D
+      }
+      function canListMemberNotices(){
+        // MN.L.0.A
+        return getIncomingAuth() != null; // MN.L.1.D
+      }
+      allow get: if canGetMemberNotices();
+      allow list: if canListMemberNotices();
+      allow create: if false; // MN.C.0.D
+      allow update: if false; // MN.U.0.D
+      allow delete: if false; // MN.D.0.D
     }
     match /userTodos/{document=**} {
       function getUserTodosKeys(){

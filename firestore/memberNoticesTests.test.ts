@@ -1,12 +1,11 @@
 import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
-import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc } from "firebase/firestore";
+import { collectionNames, memberNotice1 } from "./firestoreTestMocks";
 import * as fsUtils from "./firestoreTestUtils";
 
 let testEnv: RulesTestEnvironment;
 
-const memberNoticesCollectionName = "memberNotices";
-
-describe("firestore rules for a randomCollection", () => {
+describe(`firestore rules for ${collectionNames.memberNotices} collection`, () => {
   beforeAll(async () => {
     fsUtils.setDefaultLogLevel();
     testEnv = await fsUtils.createTestEnvironment();
@@ -18,80 +17,94 @@ describe("firestore rules for a randomCollection", () => {
     await testEnv.cleanup();
   });
 
-  it(`should not allow read access to ${memberNoticesCollectionName} collection if a user is unauthenticated `, async () => {
+  it(`MN.G.0.A should allow get if auth.uid != null from ${collectionNames.memberNotices} collection if a user is authenticated `, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      const docRef = doc(context.firestore(), memberNoticesCollectionName, "id1");
-      await setDoc(docRef, { some: "data" });
+      const docRef = doc(context.firestore(), collectionNames.memberNotices, "id1");
+      await setDoc(docRef, memberNotice1);
+    });
+
+    const authedDb = testEnv.authenticatedContext("anyUid").firestore();
+    const docRef2 = doc(authedDb, collectionNames.memberNotices, "id1");
+    const response2 = await fsUtils.isRequestGranted(getDoc(docRef2));
+    expect(response2.permissionGranted).toBe(true);
+    expect(response2.data).toEqual(memberNotice1);
+  });
+
+  it(`MN.G.1.D should deny get if auth.uid == null from ${collectionNames.memberNotices}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.memberNotices, "id1");
+      await setDoc(docRef, memberNotice1);
     });
 
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, memberNoticesCollectionName, "id1");
+    const docRef = doc(unauthedDb, collectionNames.memberNotices, "id1");
     const response = await fsUtils.isRequestDenied(getDoc(docRef));
     expect(response.permissionDenied).toBe(true);
   });
 
-  it(`should allow read access to ${memberNoticesCollectionName} collection if a user is authenticated `, async () => {
+  it(`MN.L.0.A should allow list if auth.uid != null from ${collectionNames.memberNotices}`, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      const docRef = doc(context.firestore(), memberNoticesCollectionName, "id1");
-      await setDoc(docRef, { some: "data" });
+      const docRef = doc(context.firestore(), collectionNames.memberNotices, "id1");
+      await setDoc(docRef, memberNotice1);
     });
 
     const authedDb = testEnv.authenticatedContext("anyUid").firestore();
-    const docRef2 = doc(authedDb, memberNoticesCollectionName, "id1");
-    const response2 = await fsUtils.isRequestGranted(getDoc(docRef2));
+    const q = query(collection(authedDb, collectionNames.memberNotices));
+    const response2 = await fsUtils.isRequestGranted(getDocs(q));
     expect(response2.permissionGranted).toBe(true);
-    expect(response2.data).toEqual({ some: "data" });
+    expect(response2.data).toEqual([memberNotice1]);
   });
 
-  it(`should not allow create access to a ${memberNoticesCollectionName} collection`, async () => {
+  it(`MN.L.1.D should deny list if auth.uid == null from ${collectionNames.memberNotices}`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.memberNotices, "id1");
+      await setDoc(docRef, memberNotice1);
+    });
+
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, memberNoticesCollectionName, "id1");
+    const q = query(collection(unauthedDb, collectionNames.memberNotices));
+    const response2 = await fsUtils.isRequestDenied(getDocs(q));
+    expect(response2.permissionDenied).toBe(true);
+  });
+
+  it(`MN.C.0.D should not allow create access to a ${collectionNames.memberNotices} collection`, async () => {
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, collectionNames.memberNotices, "id1");
 
     const setDocResult = await fsUtils.isRequestDenied(setDoc(docRef, { some: "data2" }));
-    if (setDocResult.permissionDenied) return;
-
-    throw new Error(
-      `permission granted to setDoc on ${memberNoticesCollectionName} but should not be`,
-    );
+    expect(setDocResult.permissionDenied).toBe(true);
   });
 
-  it(`should not allow update access to a ${memberNoticesCollectionName} collection`, async () => {
+  it(`MN.U.0.D should deny update access to ${collectionNames.memberNotices} collection`, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      const docRef = doc(context.firestore(), memberNoticesCollectionName, "id1");
-      await setDoc(docRef, { some: "data" });
+      const docRef = doc(context.firestore(), collectionNames.memberNotices, "id1");
+      await setDoc(docRef, memberNotice1);
     });
 
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, memberNoticesCollectionName, "id1");
+    const docRef = doc(unauthedDb, collectionNames.memberNotices, "id1");
 
-    const promises = [
-      fsUtils.isRequestGranted(setDoc(docRef, { some: "data2" })),
-      fsUtils.isRequestGranted(setDoc(docRef, { more: "data" }, { merge: true })),
+    const requestFns = [
+      () => setDoc(docRef, { some: "data2" }),
+      () => setDoc(docRef, { more: "data" }, { merge: true }),
     ];
-    const results = await Promise.all(promises);
-    const isAllDenied = results.every((x) => x.permissionDenied);
-    if (isAllDenied) return;
 
-    throw new Error(
-      `permission granted to setDoc updates on ${memberNoticesCollectionName} but should not be`,
-    );
+    for (const requestFn of requestFns) {
+      const response = await fsUtils.isRequestDenied(requestFn());
+      expect(response.permissionDenied).toBe(true);
+    }
   });
 
-  it(`should not allow delete access to a ${memberNoticesCollectionName} collection`, async () => {
+  it(`MN.D.0.D should deny delete access to a ${collectionNames.memberNotices} collection`, async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
-      const docRef = doc(context.firestore(), memberNoticesCollectionName, "id1");
-      await setDoc(docRef, { some: "data" });
+      const docRef = doc(context.firestore(), collectionNames.memberNotices, "id1");
+      await setDoc(docRef, memberNotice1);
     });
 
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
-    const docRef = doc(unauthedDb, memberNoticesCollectionName, "id1");
+    const docRef = doc(unauthedDb, collectionNames.memberNotices, "id1");
     const deleteDocResult = await fsUtils.isRequestDenied(deleteDoc(docRef));
 
-    const isAllDenied = deleteDocResult.permissionDenied;
-    if (isAllDenied) return;
-
-    throw new Error(
-      `permission granted to deleteDoc on ${memberNoticesCollectionName} but should not be`,
-    );
+    expect(deleteDocResult.permissionDenied).toBe(true);
   });
 });

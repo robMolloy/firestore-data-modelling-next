@@ -6,15 +6,17 @@ export type TUserTodoKey = keyof TUserTodo;
 
 export const collectionNames = {
   userTodos: "userTodos",
-};
+  memberNotices: "memberNotices",
+} as const;
 
+export const timestampSchema = z.object({ seconds: z.number(), nanoseconds: z.number() });
 export const userTodoSchema = z.object({
   id: z.string(),
   uid: z.string(),
   task: z.string(),
   completed: z.boolean(),
-  createdAt: z.object({ seconds: z.number(), nanoseconds: z.number() }),
-  updatedAt: z.object({ seconds: z.number(), nanoseconds: z.number() }),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
 });
 
 export const userTodo1 = {
@@ -25,3 +27,5 @@ export const userTodo1 = {
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
 } as const satisfies TUserTodo;
+
+export const memberNotice1 = { some: "data2" };
