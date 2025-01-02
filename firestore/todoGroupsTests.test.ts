@@ -37,9 +37,9 @@ describe(`firestore rules for ${collectionNames.todoGroups} collection`, () => {
     const authedDb = testEnv.authenticatedContext(todoGroup1.uids[0]).firestore();
     const docRef = doc(authedDb, collectionNames.todoGroups, todoGroup1.id);
 
-    const createUserTodoKeys = Object.keys(creatifyDoc(todoGroup1)) as TTodoGroupKey[];
+    const createDocKeys = Object.keys(creatifyDoc(todoGroup1)) as TTodoGroupKey[];
 
-    const missingKeyDocs = createUserTodoKeys.map((key) => removeKey(key, creatifyDoc(todoGroup1)));
+    const missingKeyDocs = createDocKeys.map((key) => removeKey(key, creatifyDoc(todoGroup1)));
     const promises = missingKeyDocs.map((todo) => isRequestDenied(setDoc(docRef, todo)));
     const results = await Promise.all(promises);
     const isAllDenied = results.every((x) => x.permissionDenied);
@@ -70,11 +70,8 @@ describe(`firestore rules for ${collectionNames.todoGroups} collection`, () => {
     const authedDb = testEnv.authenticatedContext(todoGroup1.uids[0]).firestore();
     const docRef = doc(authedDb, collectionNames.todoGroups, todoGroup1.id);
 
-    const incorrectCreatedAtUserTodo = {
-      ...creatifyDoc(todoGroup1),
-      createdAt: getNotNowTimestamp(),
-    };
-    const result = await isRequestDenied(setDoc(docRef, incorrectCreatedAtUserTodo));
+    const notNowCreatedAtDoc = { ...creatifyDoc(todoGroup1), createdAt: getNotNowTimestamp() };
+    const result = await isRequestDenied(setDoc(docRef, notNowCreatedAtDoc));
 
     expect(result.permissionDenied).toBe(true);
   });
@@ -83,12 +80,27 @@ describe(`firestore rules for ${collectionNames.todoGroups} collection`, () => {
     const authedDb = testEnv.authenticatedContext(todoGroup1.uids[0]).firestore();
     const docRef = doc(authedDb, collectionNames.todoGroups, todoGroup1.id);
 
-    const incorrectUpdatedAtUserTodo = {
-      ...creatifyDoc(todoGroup1),
-      updatedAt: getNotNowTimestamp(),
-    };
-    const result = await isRequestDenied(setDoc(docRef, incorrectUpdatedAtUserTodo));
+    const notNowUpdatedAtDoc = { ...creatifyDoc(todoGroup1), updatedAt: getNotNowTimestamp() };
+    const result = await isRequestDenied(setDoc(docRef, notNowUpdatedAtDoc));
 
     expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`TG.C.6.D.wrongUser should deny create access if auth.uid not in incoming.uids to ${collectionNames.todoGroups}`, async () => {
+    const authedDb = testEnv.authenticatedContext(`not_${todoGroup1.uids[0]}`).firestore();
+    const docRef = doc(authedDb, collectionNames.todoGroups, todoGroup1.id);
+
+    const createDocResult = await isRequestDenied(setDoc(docRef, creatifyDoc(todoGroup1)));
+
+    expect(createDocResult.permissionDenied).toBe(true);
+  });
+
+  it(`TG.C.6.D.unauth should deny create access if user is unauthenticated to ${collectionNames.todoGroups}`, async () => {
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, collectionNames.todoGroups, todoGroup1.id);
+
+    const createDocResult = await isRequestDenied(setDoc(docRef, creatifyDoc(todoGroup1)));
+
+    expect(createDocResult.permissionDenied).toBe(true);
   });
 });

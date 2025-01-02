@@ -43,7 +43,7 @@ export type TTodoGroup = z.infer<typeof todoGroupSchema>;
 export type TTodoGroupKey = keyof TTodoGroup;
 export const todoGroup1 = {
   id: "id1",
-  uids: ["uid1"],
+  uids: ["uid1", "uid2"],
   name: "this group",
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),

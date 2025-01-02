@@ -107,7 +107,7 @@ service cloud.firestore {
           && getIncomingId() == incoming.id // TG.C.3.D
           && isNow(incoming.createdAt) // TG.C.4.D
           && isNow(incoming.updatedAt) // TG.C.5.D
-          && getIncomingAuth().uid in incoming.uids // TG.C.6 - TG.C.6.D.unauth,  TG.C.6.D.wrongUser, TG.C.6.A.otherUsers, 
+          && getIncomingAuth().uid in incoming.uids // TG.C.6 - TG.C.6.D.unauth,  TG.C.6.D.wrongUser
       }
       allow get: if canGetTodoGroup();
       allow create: if canCreateTodoGroup();
