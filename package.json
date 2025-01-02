@@ -11,7 +11,7 @@
     "firebase:init": "node_modules/.bin/firebase init",
     "firebase:emulators-start:offline": "node_modules/.bin/firebase --project demo-firestore-data-modelling-tests emulators:start --only auth,firestore",
     "firebase:deploy:rules": "node_modules/.bin/firebase deploy --only firestore:rules",
-    "test": "jest --detectOpenHandles",
+    "test": "jest --detectOpenHandles --verbose",
     "test:watch": "jest --watchAll --detectOpenHandles"
   },
   "dependencies": {
