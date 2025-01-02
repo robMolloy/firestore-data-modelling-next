@@ -33,8 +33,9 @@ service cloud.firestore {
       allow get, list, create, update, delete: if false;
     }
     match /publicNotices/{document=**} {
-      allow get: if true;
-      allow list, create, update, delete: if false;
+      allow get: if true; // PN.G.0.A
+      allow list: if true; // PN.L.0.A
+      allow create, update, delete: if false;
     }
     match /memberNotices/{document=**} {
       function canGetMemberNotices(){
