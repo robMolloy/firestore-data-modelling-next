@@ -90,5 +90,27 @@ service cloud.firestore {
       allow update: if canUpdateUserTodo();
       allow delete: if canDeleteUserTodo();
     }
+    match /todoGroups/{document=**} {
+      function getTodoGroupsKeys(){
+        return ['id', 'uids', 'name', 'createdAt', 'updatedAt'];
+      }
+      function canGetTodoGroup(){
+        // TG.G.0.A
+        return true
+      }
+      function canCreateTodoGroup(){
+        let incoming = getIncomingData();
+        let keys = getTodoGroupsKeys();
+        // TG.C.0.A
+        return incoming.keys().hasAll(keys) // TG.C.1.D
+          && incoming.keys().hasOnly(keys) // TG.C.2.D
+          && getIncomingId() == incoming.id // TG.C.3.D
+          && isNow(incoming.createdAt) // TG.C.4.D
+          && isNow(incoming.updatedAt) // TG.C.5.D
+          && getIncomingAuth().uid in incoming.uids // TG.C.6 - TG.C.6.D.unauth,  TG.C.6.D.wrongUser, TG.C.6.A.otherUsers, 
+      }
+      allow get: if canGetTodoGroup();
+      allow create: if canCreateTodoGroup();
+    }
   }
 }

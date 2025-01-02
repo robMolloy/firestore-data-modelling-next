@@ -1,8 +1,7 @@
 import { Timestamp } from "firebase/firestore";
 import { z } from "zod";
 
-export type TUserTodo = z.infer<typeof userTodoSchema>;
-export type TUserTodoKey = keyof TUserTodo;
+export const timestampSchema = z.object({ seconds: z.number(), nanoseconds: z.number() });
 
 export const collectionNames = {
   userTodos: "userTodos",
@@ -11,7 +10,6 @@ export const collectionNames = {
   groupTodos: "groupTodos",
 } as const;
 
-export const timestampSchema = z.object({ seconds: z.number(), nanoseconds: z.number() });
 export const userTodoSchema = z.object({
   id: z.string(),
   uid: z.string(),
@@ -20,6 +18,8 @@ export const userTodoSchema = z.object({
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 });
+export type TUserTodo = z.infer<typeof userTodoSchema>;
+export type TUserTodoKey = keyof TUserTodo;
 
 export const userTodo1 = {
   id: "id1",
@@ -31,3 +31,20 @@ export const userTodo1 = {
 } as const satisfies TUserTodo;
 
 export const memberNotice1 = { some: "data2" };
+
+export const todoGroupSchema = z.object({
+  id: z.string(),
+  uids: z.array(z.string()),
+  name: z.string(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+});
+export type TTodoGroup = z.infer<typeof todoGroupSchema>;
+export type TTodoGroupKey = keyof TTodoGroup;
+export const todoGroup1 = {
+  id: "id1",
+  uids: ["uid1"],
+  name: "this group",
+  createdAt: Timestamp.now(),
+  updatedAt: Timestamp.now(),
+} as const satisfies TTodoGroup;
