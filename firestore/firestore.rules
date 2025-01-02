@@ -24,6 +24,11 @@ service cloud.firestore {
     match /{document=**} {
       allow get, list, create, update, delete: if false;
     }
+    
+    function getTodoGroupDoc(orgUserLinkId){
+      return get(/databases/$(database)/documents/todoGroups/$(orgUserLinkId)).data;
+    }
+
     match /randomCollection/{document=**} {
       allow get, list, create, update, delete: if false;
     }
@@ -111,6 +116,37 @@ service cloud.firestore {
       }
       allow get: if canGetTodoGroup();
       allow create: if canCreateTodoGroup();
+      
+      // allow list: if false;
+      // allow update: if false;
+      // allow delete: if false;
+    }
+    match /groupTodos/{document=**} {
+      function getGroupTodosKeys(){
+        return ['id', 'todoGroupId', 'task', 'completed', 'createdAt', 'updatedAt'];
+      }
+      function canGetGroupTodo(){
+        // GT.G.0.A
+        return true
+      }
+      function canCreateGroupTodo(){
+        let incoming = getIncomingData();
+        let keys = getGroupTodosKeys();
+        let todoGroupDoc = getTodoGroupDoc(incoming.todoGroupId);
+        // GT.C.0.A
+        return incoming.keys().hasAll(keys) // GT.C.1.D
+          && incoming.keys().hasOnly(keys) // GT.C.2.D
+          && getIncomingId() == incoming.id // GT.C.3.D
+          && isNow(incoming.createdAt) // GT.C.4.D
+          && isNow(incoming.updatedAt) // GT.C.5.D
+          && getIncomingAuth().uid in todoGroupDoc.uids // GT.C.6 - GT.C.6.D.unauth,  GT.C.6.D.wrongUser
+      }
+      allow get: if canGetGroupTodo();
+      allow create: if canCreateGroupTodo();
+      
+      // allow list: if false;
+      // allow update: if false;
+      // allow delete: if false;
     }
   }
 }
