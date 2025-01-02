@@ -48,3 +48,23 @@ export const todoGroup1 = {
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
 } as const satisfies TTodoGroup;
+
+export const groupTodoSchema = z.object({
+  id: z.string(),
+  todoGroupId: z.string(),
+  task: z.string(),
+  completed: z.boolean(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+});
+export type TGroupTodo = z.infer<typeof groupTodoSchema>;
+export type TGroupTodoKey = keyof TGroupTodo;
+
+export const groupTodo1 = {
+  id: "gt_id1",
+  todoGroupId: todoGroup1.id,
+  task: "task",
+  completed: false,
+  createdAt: Timestamp.now(),
+  updatedAt: Timestamp.now(),
+};

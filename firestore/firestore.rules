@@ -139,7 +139,7 @@ service cloud.firestore {
           && getIncomingId() == incoming.id // GT.C.3.D
           && isNow(incoming.createdAt) // GT.C.4.D
           && isNow(incoming.updatedAt) // GT.C.5.D
-          && getIncomingAuth().uid in todoGroupDoc.uids // GT.C.6 - GT.C.6.D.unauth,  GT.C.6.D.wrongUser
+          && getIncomingAuth().uid in todoGroupDoc.uids // GT.C.6 - GT.C.6.D.unauth,  GT.C.6.D.wrongUserTodoGroup, GT.C.6.D.missingTodoGroup
       }
       allow get: if canGetGroupTodo();
       allow create: if canCreateGroupTodo();
