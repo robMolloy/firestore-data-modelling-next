@@ -8,7 +8,13 @@ export const collectionNames = {
   memberNotices: "memberNotices",
   todoGroups: "todoGroups",
   groupTodos: "groupTodos",
+  publicNotices: "publicNotices",
 } as const;
+
+export const publicNoticeSchema = z.object({ id: z.string(), some: z.string() });
+export type TPublicNotice = z.infer<typeof publicNoticeSchema>;
+export type TPublicNoticeKey = keyof TPublicNotice;
+export const publicNotice1 = { id: "id1", some: "data" } as const satisfies TPublicNotice;
 
 export const userTodoSchema = z.object({
   id: z.string(),
