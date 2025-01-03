@@ -127,8 +127,8 @@ describe(`firestore rules for ${collectionNames.groupTodos} collection`, () => {
     const authedDb = testEnv.authenticatedContext(todoGroup1.uids[0]).firestore();
     const docRef = doc(authedDb, collectionNames.groupTodos, groupTodo1.id);
 
-    const additionalKeyDoc = { ...creatifyDoc(groupTodo1), id: `not_${groupTodo1.id}` };
-    const result = await isRequestDenied(setDoc(docRef, additionalKeyDoc));
+    const mismatchIdDoc = { ...creatifyDoc(groupTodo1), id: `not_${groupTodo1.id}` };
+    const result = await isRequestDenied(setDoc(docRef, mismatchIdDoc));
 
     expect(result.permissionDenied).toBe(true);
   });
