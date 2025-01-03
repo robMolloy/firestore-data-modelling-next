@@ -9,6 +9,7 @@ export const collectionNames = {
   todoGroups: "todoGroups",
   groupTodos: "groupTodos",
   publicNotices: "publicNotices",
+  siteConfig: "siteConfig",
 } as const;
 
 export const publicNoticeSchema = z.object({ id: z.string(), some: z.string() });

@@ -151,5 +151,30 @@ service cloud.firestore {
       allow update: if false; // GT.U.0.D
       allow delete: if false; // GT.D.0.D
     }
+
+    match /siteConfig/{document=**} {
+      function getSiteConfigKeys(){
+        return ['id', 'adminUids', 'createdAt', 'updatedAt'];
+      }
+      function canCreateSiteConfig(){
+        let incomingId = getIncomingId();
+        let incoming = getIncomingData();
+        let keys = getSiteConfigKeys();
+    
+        // SC.C.0.A
+        return incoming.keys().hasAll(keys) // SC.C.1.D
+          && incoming.keys().hasOnly(keys) // SC.C.2.D
+          && incomingId == incoming.id && incomingId == "unique" // SC.C.3.D
+          && isNow(incoming.createdAt) // SC.C.4.D
+          && isNow(incoming.updatedAt) // SC.C.5.D
+          && getIncomingAuth().uid in incoming.adminUids // GT.C.6 - GT.C.6.D.unauth, GT.C.6.D.wrongUser
+      }
+      allow get: if true; // SC.G.0.A
+      allow create: if canCreateSiteConfig();
+      
+      allow list: if false; // SC.L.0.D
+      allow update: if false; // SC.U.0.D
+      allow delete: if false; // SC.D.0.D
+    }
   }
 }

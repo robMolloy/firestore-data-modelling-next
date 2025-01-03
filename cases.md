@@ -7,17 +7,17 @@ The easiest way to find the relevant code is to use the audit key to do a global
 ## Standard
 
 1. Any user can read docs from publicNotices collection
-   - [x] get
-   - [x] list
-   - [ ] ~~create~~ (not relevant)
-   - [ ] ~~update~~ (not relevant)
-   - [ ] ~~delete~~ (not relevant)
+   - [x] get // PN.G
+   - [x] list // PN.L
+   - [x] create // PN.C
+   - [x] update // PN.U
+   - [x] delete // PN.D
 2. Any logged in user can read the memberNotices collection
    - [x] get // MN.G
    - [x] list // MN.L
-   - [ ] ~~create~~ (not relevant)
-   - [ ] ~~update~~ (not relevant)
-   - [ ] ~~delete~~ (not relevant)
+   - [x] create // MN.C
+   - [x] update // MN.U
+   - [x] delete // MN.D
 3. Any logged in user can read/write a doc in the userTodos collection as long as the uid corresponds to the user's uid
    - [x] get // UT.G
    - [x] list // UT.L
@@ -26,16 +26,16 @@ The easiest way to find the relevant code is to use the audit key to do a global
    - [x] delete // UT.D
 4. Any logged in user can read/write a doc in the todoGroups collection as long as their uid exists in the todoGroups.uids field
    - [x] get // TG.G
-   - [ ] list
+   - [x] list // TG.L
    - [x] create // TG.C
-   - [ ] update
-   - [ ] delete
+   - [x] update // TG.U
+   - [x] delete // TG.D
 5. Any logged in user can read/write a doc in the groupTodos collection as long as their uid exists in the referenced todoGroups.uids field
    - [x] get // GT.G
-   - [ ] list
+   - [x] list // GT.L
    - [x] create // GT.C
-   - [ ] update
-   - [ ] delete
+   - [x] update // GT.U
+   - [x] delete // GT.D
 6. The siteConfig collection which follows a singleDoc pattern can be read by any user and written to if empty or if the user is listed in the adminUids field
    - [ ] get
    - [ ] list
