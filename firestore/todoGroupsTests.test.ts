@@ -62,7 +62,7 @@ describe(`firestore rules for ${collectionNames.todoGroups} collection`, () => {
     const authedDb = testEnv.authenticatedContext(todoGroup1.uids[0]).firestore();
     const docRef = doc(authedDb, collectionNames.todoGroups, todoGroup1.id);
 
-    const createDocKeys = Object.keys(creatifyDoc(todoGroup1)) as TTodoGroupKey[];
+    const createDocKeys = Object.keys(todoGroup1) as TTodoGroupKey[];
 
     const missingKeyDocs = createDocKeys.map((key) => removeKey(key, creatifyDoc(todoGroup1)));
     const promises = missingKeyDocs.map((todo) => isRequestDenied(setDoc(docRef, todo)));
