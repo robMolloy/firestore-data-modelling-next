@@ -170,11 +170,8 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
     const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
 
-    const incorrectCreatedAtUserTodo = {
-      ...creatifyDoc(userTodo1),
-      createdAt: getNotNowTimestamp(),
-    };
-    const result = await isRequestDenied(setDoc(docRef, incorrectCreatedAtUserTodo));
+    const notNowCreatedAtDoc = { ...creatifyDoc(userTodo1), createdAt: getNotNowTimestamp() };
+    const result = await isRequestDenied(setDoc(docRef, notNowCreatedAtDoc));
 
     expect(result.permissionDenied).toBe(true);
   });
@@ -183,11 +180,8 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
     const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
     const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
 
-    const incorrectUpdatedAtUserTodo = {
-      ...creatifyDoc(userTodo1),
-      updatedAt: getNotNowTimestamp(),
-    };
-    const result = await isRequestDenied(setDoc(docRef, incorrectUpdatedAtUserTodo));
+    const notNowUpdatedAtDoc = { ...creatifyDoc(userTodo1), updatedAt: getNotNowTimestamp() };
+    const result = await isRequestDenied(setDoc(docRef, notNowUpdatedAtDoc));
 
     expect(result.permissionDenied).toBe(true);
   });
