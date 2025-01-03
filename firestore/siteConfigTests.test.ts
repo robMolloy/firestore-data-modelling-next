@@ -1,10 +1,13 @@
 import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { doc, getDoc, setDoc, deleteDoc, query, collection, getDocs } from "firebase/firestore";
-import { collectionNames, siteConfig1, TSiteConfig } from "./firestoreTestMocks";
+import { collectionNames, siteConfig1, TSiteConfig, TSiteConfigKey } from "./firestoreTestMocks";
 import {
   createTestEnvironment,
+  creatifyDoc,
+  getNotNowTimestamp,
   isRequestDenied,
   isRequestGranted,
+  removeKey,
   setDefaultLogLevel,
 } from "./firestoreTestUtils";
 let testEnv: RulesTestEnvironment;
@@ -75,6 +78,97 @@ describe(`firestore rules for ${collectionNames.siteConfig} collection`, () => {
     const responses = await Promise.all(promises);
     const isAllDenied = responses.every((x) => x.permissionDenied);
     expect(isAllDenied).toBe(true);
+  });
+
+  it(`SC.C.0.A should allow create access if user is authenticated and data is valid to ${collectionNames.siteConfig}`, async () => {
+    const authedDb = testEnv.authenticatedContext(siteConfig1.adminUids[0]).firestore();
+    const docRef = doc(authedDb, collectionNames.siteConfig, siteConfig1.id);
+
+    const createDocResult = await isRequestGranted(setDoc(docRef, creatifyDoc(siteConfig1)));
+
+    expect(createDocResult.permissionGranted).toBe(true);
+  });
+
+  it(`SC.C.1.D should deny create access if missing key to ${collectionNames.siteConfig}`, async () => {
+    const authedDb = testEnv.authenticatedContext(siteConfig1.adminUids[0]).firestore();
+    const docRef = doc(authedDb, collectionNames.siteConfig, siteConfig1.id);
+
+    const createDocKeys = Object.keys(siteConfig1) as TSiteConfigKey[];
+
+    const missingKeyDocs = createDocKeys.map((key) => removeKey(key, creatifyDoc(siteConfig1)));
+    const promises = missingKeyDocs.map((doc1) => isRequestDenied(setDoc(docRef, doc1)));
+    const results = await Promise.all(promises);
+    const isAllDenied = results.every((x) => x.permissionDenied);
+    expect(isAllDenied).toBe(true);
+  });
+
+  it(`SC.C.2.D should deny create access if additional key to ${collectionNames.siteConfig}`, async () => {
+    const authedDb = testEnv.authenticatedContext(siteConfig1.adminUids[0]).firestore();
+    const docRef = doc(authedDb, collectionNames.siteConfig, siteConfig1.id);
+
+    const additionalKeyDoc = { ...creatifyDoc(siteConfig1), another: "key" };
+    const result = await isRequestDenied(setDoc(docRef, additionalKeyDoc));
+
+    expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`SC.C.3.D should deny access if getIncomingId() != incoming.id to ${collectionNames.siteConfig}`, async () => {
+    const authedDb = testEnv.authenticatedContext(siteConfig1.adminUids[0]).firestore();
+    const docRef = doc(authedDb, collectionNames.siteConfig, siteConfig1.id);
+
+    const mismatchIdDoc = { ...creatifyDoc(siteConfig1), id: `not_${siteConfig1.id}` };
+    const result = await isRequestDenied(setDoc(docRef, mismatchIdDoc));
+
+    expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`SC.C.4.D should deny access if incoming.id != "unique" to ${collectionNames.siteConfig}`, async () => {
+    const invalidId = "not_unique";
+    const authedDb = testEnv.authenticatedContext(siteConfig1.adminUids[0]).firestore();
+    const docRef = doc(authedDb, collectionNames.siteConfig, invalidId);
+
+    const additionalKeyDoc = { ...creatifyDoc(siteConfig1), id: invalidId };
+    const result = await isRequestDenied(setDoc(docRef, additionalKeyDoc));
+
+    expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`SC.C.5.D should deny access if isNotNow(incoming.createdAt) to ${collectionNames.siteConfig}`, async () => {
+    const authedDb = testEnv.authenticatedContext(siteConfig1.adminUids[0]).firestore();
+    const docRef = doc(authedDb, collectionNames.siteConfig, siteConfig1.id);
+
+    const notNowCreatedAtDoc = { ...creatifyDoc(siteConfig1), createdAt: getNotNowTimestamp() };
+    const result = await isRequestDenied(setDoc(docRef, notNowCreatedAtDoc));
+
+    expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`SC.C.6.D should deny access if isNotNow(incoming.updatedAt) to ${collectionNames.siteConfig}`, async () => {
+    const authedDb = testEnv.authenticatedContext(siteConfig1.adminUids[0]).firestore();
+    const docRef = doc(authedDb, collectionNames.siteConfig, siteConfig1.id);
+
+    const incorrectUpdatedAtDoc = { ...creatifyDoc(siteConfig1), updatedAt: getNotNowTimestamp() };
+    const result = await isRequestDenied(setDoc(docRef, incorrectUpdatedAtDoc));
+
+    expect(result.permissionDenied).toBe(true);
+  });
+
+  it(`SC.C.7.D.wrongUser should deny create access if auth.uid is not in incoming.adminUids to ${collectionNames.siteConfig}`, async () => {
+    const authedDb = testEnv.authenticatedContext(`not_${siteConfig1.adminUids[0]}`).firestore();
+    const docRef = doc(authedDb, collectionNames.siteConfig, siteConfig1.id);
+
+    const createDocResult = await isRequestDenied(setDoc(docRef, creatifyDoc(siteConfig1)));
+
+    expect(createDocResult.permissionDenied).toBe(true);
+  });
+
+  it(`SC.C.7.D.unauth should deny create access if user is unauthenticated to ${collectionNames.siteConfig}`, async () => {
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, collectionNames.siteConfig, siteConfig1.id);
+
+    const createDocResult = await isRequestDenied(setDoc(docRef, creatifyDoc(siteConfig1)));
+
+    expect(createDocResult.permissionDenied).toBe(true);
   });
 
   it(`SC.U.0.D should deny update access to ${collectionNames.siteConfig} collection`, async () => {

@@ -168,10 +168,11 @@ service cloud.firestore {
         // SC.C.0.A
         return incoming.keys().hasAll(keys) // SC.C.1.D
           && incoming.keys().hasOnly(keys) // SC.C.2.D
-          && incomingId == incoming.id && incomingId == "unique" // SC.C.3.D
-          && isNow(incoming.createdAt) // SC.C.4.D
-          && isNow(incoming.updatedAt) // SC.C.5.D
-          && getIncomingAuth().uid in incoming.adminUids // GT.C.6 - GT.C.6.D.unauth, GT.C.6.D.wrongUser
+          && incomingId == incoming.id // SC.C.3.D
+          && incomingId == "unique" // SC.C.4.D
+          && isNow(incoming.createdAt) // SC.C.5.D
+          && isNow(incoming.updatedAt) // SC.C.6.D
+          && getIncomingAuth().uid in incoming.adminUids // SC.C.7 - SC.C.7.D.unauth, SC.C.7.D.wrongUser
       }
       allow get: if canGetSiteConfig();
       allow create: if canCreateSiteConfig();

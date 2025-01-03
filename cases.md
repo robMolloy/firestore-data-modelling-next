@@ -37,11 +37,11 @@ The easiest way to find the relevant code is to use the audit key to do a global
    - [x] update // GT.U
    - [x] delete // GT.D
 6. The siteConfig collection which follows a singleDoc pattern can be read by any user and written to if empty or if the user is listed in the adminUids field
-   - [ ] get
-   - [ ] list
-   - [ ] create
-   - [ ] update
-   - [ ] delete
+   - [x] get // SC.G
+   - [x] list // SC.L
+   - [x] create // SC.C
+   - [x] update // SC.U
+   - [x] delete // SC.D
 7. a user can read/write to any doc in the todoVersionHistory collection as long as their uid matches the uid field
    - [ ] get
    - [ ] list
