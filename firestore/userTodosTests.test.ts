@@ -41,8 +41,8 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
       await setDoc(docRef, userTodo1);
     });
 
-    const unauthedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
-    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
     const response = await isRequestGranted(getDoc(docRef));
     expect(response.permissionGranted).toBe(true);
     expect(response.data).toEqual(userTodo1);
@@ -66,8 +66,8 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
       await setDoc(docRef, userTodo1);
     });
 
-    const unauthedDb = testEnv.authenticatedContext(`not_${userTodo1.uid}`).firestore();
-    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+    const authedDb = testEnv.authenticatedContext(`not_${userTodo1.uid}`).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
     const response = await isRequestGranted(getDoc(docRef));
     expect(response.permissionDenied).toBe(true);
   });
@@ -325,8 +325,8 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
       await setDoc(docRef, userTodo1);
     });
 
-    const unauthedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
-    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+    const authedDb = testEnv.authenticatedContext(userTodo1.uid).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
     const response = await isRequestGranted(deleteDoc(docRef));
     expect(response.permissionGranted).toBe(true);
   });
@@ -349,8 +349,8 @@ describe(`firestore rules for ${collectionNames.userTodos} collection`, () => {
       await setDoc(docRef, userTodo1);
     });
 
-    const unauthedDb = testEnv.authenticatedContext(`not_${userTodo1.uid}`).firestore();
-    const docRef = doc(unauthedDb, collectionNames.userTodos, userTodo1.id);
+    const authedDb = testEnv.authenticatedContext(`not_${userTodo1.uid}`).firestore();
+    const docRef = doc(authedDb, collectionNames.userTodos, userTodo1.id);
     const response = await isRequestGranted(deleteDoc(docRef));
     expect(response.permissionDenied).toBe(true);
   });
