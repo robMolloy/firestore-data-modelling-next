@@ -181,5 +181,39 @@ service cloud.firestore {
       allow update: if false; // SC.U.0.D
       allow delete: if false; // SC.D.0.D
     }
+
+    match /todoVersionHistory/{document=**} {
+      function getTodoVersionHistoryKeys(){
+        return ['id', 'uid', 'versionIds', 'currentVersionNumber', 'createdAt', 'updatedAt'];
+      }
+      function canGetTodoVersionHistory(){
+        // TVH.G.0.A
+        return getIncomingAuth() != null; // TVH.G.1.D
+      }
+      function canCreateTodoVersionHistory(){
+        let incomingId = getIncomingId();
+        let incoming = getIncomingData();
+        let keys = getTodoVersionHistoryKeys();
+    
+        // TVH.C.0.A
+        return incoming.keys().hasAll(keys) // TVH.C.1.D
+          && incoming.keys().hasOnly(keys) // TVH.C.2.D
+          && incomingId == incoming.id // TVH.C.3.D
+          && incomingId == "unique" // TVH.C.4.D
+          && isNow(incoming.createdAt) // TVH.C.5.D
+          && isNow(incoming.updatedAt) // TVH.C.6.D
+          && getIncomingAuth().uid in incoming.adminUids // TVH.C.7 - TVH.C.7.D.unauth, TVH.C.7.D.wrongUser
+      }
+      function canUpdateTodoVersionHistory(){
+        // TVH.U.0.A
+        return true;
+      }
+      allow get: if canGetTodoVersionHistory();
+      allow create: if canCreateTodoVersionHistory();
+      allow update: if canUpdateTodoVersionHistory();
+      
+      allow list: if false; // TVH.L.0.D
+      allow delete: if false; // TVH.D.0.D
+    }
   }
 }
