@@ -1,5 +1,5 @@
 import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { collectionNames, groupTodo1, TGroupTodoKey, todoGroup1 } from "./firestoreTestMocks";
 import {
   createTestEnvironment,
@@ -22,6 +22,19 @@ describe(`firestore rules for ${collectionNames.groupTodos} collection`, () => {
   });
   afterAll(async () => {
     await testEnv.cleanup();
+  });
+
+  it(`GT.G.0.A should grant get access to a ${collectionNames.groupTodos} collection`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const docRef = doc(context.firestore(), collectionNames.groupTodos, groupTodo1.id);
+      await setDoc(docRef, groupTodo1);
+    });
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const docRef = doc(unauthedDb, collectionNames.groupTodos, groupTodo1.id);
+    const response = await isRequestGranted(getDoc(docRef));
+    expect(response.permissionGranted).toBe(true);
+    expect(response.data).toEqual(groupTodo1);
   });
 
   it(`GT.C.0.A should allow create access if user is authenticated and data is valid to ${collectionNames.groupTodos}`, async () => {

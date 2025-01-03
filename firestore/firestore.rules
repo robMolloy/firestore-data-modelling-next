@@ -120,9 +120,9 @@ service cloud.firestore {
       allow get: if canGetTodoGroup();
       allow create: if canCreateTodoGroup();
       
-      // allow list: if false;
-      // allow update: if false;
-      // allow delete: if false;
+      allow list: if false; // TG.L.0.D
+      allow update: if false; // TG.U.0.D
+      allow delete: if false; // TG.D.0.D
     }
     match /groupTodos/{document=**} {
       function getGroupTodosKeys(){
