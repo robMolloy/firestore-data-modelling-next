@@ -73,4 +73,4 @@ export const groupTodo1 = {
   completed: false,
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
-};
+} as const satisfies TGroupTodo;

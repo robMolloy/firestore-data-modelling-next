@@ -1,6 +1,21 @@
 import { RulesTestEnvironment } from "@firebase/rules-unit-testing";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { collectionNames, groupTodo1, TGroupTodoKey, todoGroup1 } from "./firestoreTestMocks";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  query,
+  collection,
+  getDocs,
+  where,
+  deleteDoc,
+} from "firebase/firestore";
+import {
+  collectionNames,
+  groupTodo1,
+  TGroupTodo,
+  TGroupTodoKey,
+  todoGroup1,
+} from "./firestoreTestMocks";
 import {
   createTestEnvironment,
   creatifyDoc,
@@ -35,6 +50,28 @@ describe(`firestore rules for ${collectionNames.groupTodos} collection`, () => {
     const response = await isRequestGranted(getDoc(docRef));
     expect(response.permissionGranted).toBe(true);
     expect(response.data).toEqual(groupTodo1);
+  });
+
+  it(`GT.L.0.D should deny list access to a ${collectionNames.groupTodos} collection`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const todoGroupDocRef = doc(context.firestore(), collectionNames.todoGroups, todoGroup1.id);
+      const groupTodoDocRef = doc(context.firestore(), collectionNames.groupTodos, groupTodo1.id);
+      const promises = [setDoc(todoGroupDocRef, todoGroup1), setDoc(groupTodoDocRef, groupTodo1)];
+      await Promise.all(promises);
+    });
+
+    const authedDb = testEnv.authenticatedContext(todoGroup1.uids[0]).firestore();
+    const queries = [
+      query(collection(authedDb, collectionNames.groupTodos)),
+      query(
+        collection(authedDb, collectionNames.groupTodos),
+        where("todoGroupId", "==", groupTodo1.todoGroupId),
+      ),
+    ];
+    const promises = queries.map((q) => isRequestDenied(getDocs(q)));
+    const responses = await Promise.all(promises);
+    const isAllDenied = responses.every((x) => x.permissionDenied);
+    expect(isAllDenied).toBe(true);
   });
 
   it(`GT.C.0.A should allow create access if user is authenticated and data is valid to ${collectionNames.groupTodos}`, async () => {
@@ -157,5 +194,62 @@ describe(`firestore rules for ${collectionNames.groupTodos} collection`, () => {
     const createDocResult = await isRequestDenied(setDoc(docRef, creatifyDoc(groupTodo1)));
 
     expect(createDocResult.permissionDenied).toBe(true);
+  });
+
+  it(`GT.U.0.D should deny update access to ${collectionNames.groupTodos} collection`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const todoGroupDocRef = doc(context.firestore(), collectionNames.todoGroups, todoGroup1.id);
+      const groupTodoDocRef = doc(context.firestore(), collectionNames.groupTodos, groupTodo1.id);
+      const promises = [setDoc(todoGroupDocRef, todoGroup1), setDoc(groupTodoDocRef, groupTodo1)];
+      await Promise.all(promises);
+    });
+
+    const ownerDb = testEnv.authenticatedContext(todoGroup1.uids[0]).firestore();
+    const ownerDocRef = doc(ownerDb, collectionNames.todoGroups, todoGroup1.id);
+
+    const notOwnerDb = testEnv.authenticatedContext(`not_${todoGroup1.uids[0]}`).firestore();
+    const notOwnerDocRef = doc(notOwnerDb, collectionNames.todoGroups, todoGroup1.id);
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const unauthDocRef = doc(unauthedDb, collectionNames.todoGroups, todoGroup1.id);
+
+    const newGroupTodo = { ...groupTodo1, completed: true } satisfies TGroupTodo;
+    const requestFns = [
+      () => setDoc(ownerDocRef, newGroupTodo),
+      () => setDoc(ownerDocRef, newGroupTodo, { merge: true }),
+      () => setDoc(notOwnerDocRef, newGroupTodo),
+      () => setDoc(notOwnerDocRef, newGroupTodo, { merge: true }),
+      () => setDoc(unauthDocRef, newGroupTodo),
+      () => setDoc(unauthDocRef, newGroupTodo, { merge: true }),
+    ];
+
+    for (const requestFn of requestFns) {
+      const response = await isRequestDenied(requestFn());
+      expect(response.permissionDenied).toBe(true);
+    }
+  });
+
+  it(`GT.D.0.D should deny delete access to a ${collectionNames.groupTodos} collection`, async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const todoGroupDocRef = doc(context.firestore(), collectionNames.todoGroups, todoGroup1.id);
+      const groupTodoDocRef = doc(context.firestore(), collectionNames.groupTodos, groupTodo1.id);
+      const promises = [setDoc(todoGroupDocRef, todoGroup1), setDoc(groupTodoDocRef, groupTodo1)];
+      await Promise.all(promises);
+    });
+
+    const ownerDb = testEnv.authenticatedContext(todoGroup1.uids[0]).firestore();
+    const ownerDocRef = doc(ownerDb, collectionNames.todoGroups, todoGroup1.id);
+
+    const notOwnerDb = testEnv.authenticatedContext(`not_${todoGroup1.uids[0]}`).firestore();
+    const notOwnerDocRef = doc(notOwnerDb, collectionNames.todoGroups, todoGroup1.id);
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    const unauthDocRef = doc(unauthedDb, collectionNames.todoGroups, todoGroup1.id);
+
+    const docRefs = [ownerDocRef, notOwnerDocRef, unauthDocRef];
+    const promises = docRefs.map((docRef) => isRequestDenied(deleteDoc(docRef)));
+    const responses = await Promise.all(promises);
+    const isAllDenied = responses.every((x) => x.permissionDenied);
+    expect(isAllDenied).toBe(true);
   });
 });

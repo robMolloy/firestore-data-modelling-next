@@ -147,9 +147,9 @@ service cloud.firestore {
       allow get: if canGetGroupTodo();
       allow create: if canCreateGroupTodo();
       
-      // allow list: if false;
-      // allow update: if false;
-      // allow delete: if false;
+      allow list: if false; // GT.L.0.D
+      allow update: if false; // GT.U.0.D
+      allow delete: if false; // GT.D.0.D
     }
   }
 }
