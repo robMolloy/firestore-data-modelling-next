@@ -135,8 +135,8 @@ describe(`firestore rules for ${collectionNames.todoGroups} collection`, () => {
       await setDoc(docRef, todoGroup1);
     });
 
-    const unauthedDb = testEnv.authenticatedContext(`not_${todoGroup1.uids[0]}`).firestore();
-    const docRef = doc(unauthedDb, collectionNames.todoGroups, todoGroup1.id);
+    const authedDb = testEnv.authenticatedContext(`not_${todoGroup1.uids[0]}`).firestore();
+    const docRef = doc(authedDb, collectionNames.todoGroups, todoGroup1.id);
 
     const requestFns = [
       () => setDoc(docRef, { some: "data2" }),
