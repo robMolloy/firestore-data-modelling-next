@@ -75,3 +75,18 @@ export const groupTodo1 = {
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
 } as const satisfies TGroupTodo;
+
+export const siteConfigSchema = z.object({
+  id: z.literal("unique"),
+  adminUids: z.array(z.string()),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+});
+export type TSiteConfig = z.infer<typeof siteConfigSchema>;
+export type TSiteConfigKey = keyof TSiteConfig;
+export const siteConfig1 = {
+  id: "unique",
+  adminUids: ["uid1", "uid2"],
+  createdAt: Timestamp.now(),
+  updatedAt: Timestamp.now(),
+} as const satisfies TSiteConfig;
